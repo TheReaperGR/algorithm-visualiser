@@ -1,53 +1,27 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useLocation,
-} from "react-router-dom";
-import { useState } from "react";
-import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Home from "./components/Home";
+import Bogosort from "./components/Bogosort";
 import BubbleSort from "./components/BubbleSort";
 import RandomWalk from "./components/RandomWalk";
+import SlotMachineBogosort from "./components/SlotMachineBogosort";
+import './index.css';
 
-function PageTransition() {
-  const location = useLocation();
-  const [displayLocation, setDisplayLocation] = useState(location);
-  const [transitionStage, setTransitionStage] = useState("fadeIn");
-
-  if (location !== displayLocation && transitionStage !== "fadeOut") {
-    setTransitionStage("fadeOut");
-  }
-
+export default function App() {
   return (
-    <div
-      className={`page-transition ${transitionStage}`}
-      onAnimationEnd={() => {
-        if (transitionStage === "fadeOut") {
-          setDisplayLocation(location);
-          setTransitionStage("fadeIn");
-        }
-      }}
-    >
-      <Routes location={displayLocation}>
-        <Route path="/" element={<Home />} />
-        <Route path="/bubble-sort" element={<BubbleSort />} />
-        <Route path="/random-walk" element={<RandomWalk />} />
-      </Routes>
-    </div>
-  );
-}
-
-function App() {
-  return (
-    <Router>
-      <div className="App">
+    <BrowserRouter>
+      <div className="layout">
         <Header />
-        <PageTransition />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/bogosort" element={<Bogosort />} />
+            <Route path="/bubble-sort" element={<BubbleSort />} />
+            <Route path="/random-walk" element={<RandomWalk />} />
+            <Route path="/slot-machine" element={<SlotMachineBogosort />} />
+          </Routes>
+        </main>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
-
-export default App;

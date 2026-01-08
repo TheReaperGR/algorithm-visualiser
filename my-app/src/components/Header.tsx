@@ -16,6 +16,12 @@ const Header = () => {
           <Link to="/random-walk" className="nav-button">
             Random Walk
           </Link>
+          <Link to="/bogosort" className="nav-button">
+            Bogosort
+          </Link>
+          <Link to="/slot-machine" className="nav-button">
+            Slots
+          </Link>
         </nav>
       </div>
     </header>
