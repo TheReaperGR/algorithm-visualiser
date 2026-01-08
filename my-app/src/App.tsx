@@ -8,8 +8,10 @@ import SlotMachineBogosort from "./components/SlotMachineBogosort";
 import './index.css';
 
 export default function App() {
+  const basename = import.meta.env.MODE === 'production' ? '/algorithm-visualiser' : '/';
+
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <div className="layout">
         <Header />
         <main className="main-content">

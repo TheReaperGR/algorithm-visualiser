@@ -72,14 +72,24 @@ const styles = {
     padding: '20px',
     borderRadius: '10px',
     border: '5px solid #fff'
+  },
+  modePanel: {
+    marginBottom: '1rem',
+    display: 'flex',
+    gap: '10px',
+    backgroundColor: '#333',
+    padding: '5px',
+    borderRadius: '8px'
   }
 };
 
 const SlotMachineBogosort = () => {
+  const [slotSize, setSlotSize] = useState(4);
   const [array, setArray] = useState<number[]>([]);
   const [isSorting, setIsSorting] = useState(false);
   const [isSorted, setIsSorted] = useState(false);
   const [speed, setSpeed] = useState(100);
+  const [mode, setMode] = useState<'auto' | 'manual'>('auto');
   const stopRef = useRef(false);
 
   useEffect(() => {
@@ -88,7 +98,6 @@ const SlotMachineBogosort = () => {
 
   const generateArray = () => {
     if (isSorting) return;
-    // 4 Values, using 1-9 for slot aesthetics
     const newArray = Array.from({ length: 4 }, () => Math.floor(Math.random() * 9) + 1);
     setIsSorted(false);
     setArray(newArray);
@@ -101,29 +110,46 @@ const SlotMachineBogosort = () => {
     return true;
   };
 
-  const startSort = async () => {
+  const shuffleOnce = (currentArray: number[]) => {
+      const arr = [...currentArray];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+  }
+
+  const handleManualSpin = () => {
+    if (isSorting || isSorted) return;
+    
+    // Just one shuffle
+    setIsSorting(true);
+    // Add a tiny artificial delay for effect 
+    setTimeout(() => {
+        const nextArray = shuffleOnce(array);
+        setArray(nextArray);
+        if (checkSorted(nextArray)) {
+            setIsSorted(true);
+        }
+        setIsSorting(false);
+    }, 200);
+  };
+
+  const startAutoSort = async () => {
     if (isSorting || isSorted) return;
     setIsSorting(true);
     stopRef.current = false;
 
     let currentArray = [...array];
 
-    // Bogosort Loop
     while (!checkSorted(currentArray)) {
       if (stopRef.current) {
         setIsSorting(false);
         return;
       }
 
-      // Shuffle logic
-      for (let i = currentArray.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [currentArray[i], currentArray[j]] = [currentArray[j], currentArray[i]];
-      }
-
+      currentArray = shuffleOnce(currentArray);
       setArray([...currentArray]);
-      
-      // Delay
       await new Promise(resolve => setTimeout(resolve, speed));
     }
 
@@ -137,7 +163,6 @@ const SlotMachineBogosort = () => {
 
   return (
     <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {/* Inject Keyframes for flicker */}
       <style>{`
         @keyframes flicker {
           0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
@@ -148,6 +173,7 @@ const SlotMachineBogosort = () => {
       <h1 style={{ color: '#d4af37', textShadow: '2px 2px 0 #000' }}>🎰 Bogo Slots 🎰</h1>
       
       <div style={styles.machineContainer}>
+        {/* BIG WIN OVERLAY */}
         {isSorted && (
           <div style={styles.bigWin}>
             BIG WIN!<br/>
@@ -155,33 +181,114 @@ const SlotMachineBogosort = () => {
           </div>
         )}
 
+        {/* CONTROLS BAR (Mode + Size) */}
+        <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', alignItems: 'center', backgroundColor: '#333', padding: '10px', borderRadius: '10px' }}>
+             {/* MODE SELECTOR */}
+             <div style={styles.modePanel}>
+                <button 
+                    onClick={() => setMode('auto')} 
+                    style={{ 
+                        backgroundColor: mode === 'auto' ? '#d4af37' : '#555',
+                        color: mode === 'auto' ? '#000' : '#ccc',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Auto
+                </button>
+                <button 
+                    onClick={() => setMode('manual')} 
+                    style={{ 
+                        backgroundColor: mode === 'manual' ? '#d4af37' : '#555',
+                        color: mode === 'manual' ? '#000' : '#ccc',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Manual
+                </button>
+             </div>
+
+             {/* SIZE SLIDER */}
+             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ccc' }}>
+                <span>Slots: {slotSize}</span>
+                <input 
+                    type="range" 
+                    min="4" 
+                    max="9" 
+                    value={slotSize} 
+                    onChange={(e) => {
+                        const newSize = Number(e.target.value);
+                        setSlotSize(newSize);
+                        // Regenerate array immediately when size changes
+                        const newArray = Array.from({ length: newSize }, () => Math.floor(Math.random() * 9) + 1);
+                        setIsSorted(false);
+                        setArray(newArray);
+                    }}
+                    disabled={isSorting}
+                />
+             </div>
+        </div>
+
+        {/* REELS */}
         <div style={styles.reelContainer}>
           {array.map((val, idx) => (
             <div key={idx} style={styles.column}>
-              {/* Top Row (Prev Value Mock) */}
               <div style={styles.cell}>{(val + 1) % 9 + 1}</div>
               
-              {/* Middle Row (Actual Value - Payline) */}
-              <div style={{...styles.cell, ...styles.payline}}>
+              {/* Middle Row with Blur Effect */}
+              <div style={{
+                  ...styles.cell, 
+                  ...styles.payline,
+                  filter: (isSorting && mode === 'manual') ? 'blur(4px)' : 'blur(0px)',
+                  transition: 'filter 0.1s ease-out'
+              }}>
                 {val}
               </div>
               
-              {/* Bottom Row (Next Value Mock) */}
               <div style={styles.cell}>{(val + 7) % 9 + 1}</div>
             </div>
           ))}
         </div>
 
-        <Controls 
-          onStart={startSort}
-          onStop={stopSort}
-          onReset={generateArray}
-          isSorting={isSorting}
-          isSorted={isSorted}
-          speed={speed}
-          setSpeed={setSpeed}
-          startLabel="SPIN!"
-        />
+        {/* CONTROLS */}
+        {/* We wrap Controls or just use custom buttons for Manual Mode to simplify UX */}
+        {mode === 'auto' ? (
+            <Controls 
+              onStart={startAutoSort}
+              onStop={stopSort}
+              onReset={generateArray}
+              isSorting={isSorting}
+              isSorted={isSorted}
+              speed={speed}
+              setSpeed={setSpeed}
+              startLabel="AUTO SPIN!"
+            />
+        ) : (
+             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                 <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button 
+                        onClick={handleManualSpin} 
+                        disabled={isSorted || isSorting}
+                        style={{ 
+                            backgroundColor: '#d00000', 
+                            color: 'white', 
+                            fontSize: '1.2rem',
+                            padding: '10px 30px',
+                            border: '4px solid #fff'
+                        }}
+                    >
+                        {isSorting ? '...' : (isSorted ? 'WINNER!' : 'SPIN ONCE')}
+                    </button>
+                    <button onClick={generateArray}>Reset</button>
+                 </div>
+                 <span style={{color: '#999'}}>Click to shuffle once. Good luck!</span>
+             </div>
+        )}
       </div>
     </div>
   );

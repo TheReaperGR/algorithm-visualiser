@@ -20,7 +20,7 @@ const Header = () => {
             Bogosort
           </Link>
           <Link to="/slot-machine" className="nav-button">
-            Slots
+            Bogoslot
           </Link>
         </nav>
       </div>
