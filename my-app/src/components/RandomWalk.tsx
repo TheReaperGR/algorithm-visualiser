@@ -1,64 +1,50 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Point } from '../types';
-import './RandomWalk.css';
+import '../index.css'; // Ensure global styles are available, though usually imported in App
 
 // Canvas dimensions and step size for each move
-const WIDTH = 800;
-const HEIGHT = 600;
+const WIDTH = 600;
+const HEIGHT = 400;
 const STEP = 5;
 
 const RandomWalk = () => {
-  // Reference to the canvas element
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  // Store all points in the walk path, starting at center
   const [path, setPath] = useState<Point[]>([{ x: WIDTH / 2, y: HEIGHT / 2 }]);
-  
-  // Control whether the animation is running
   const [isRunning, setIsRunning] = useState(false);
+  const [speed, setSpeed] = useState(50); // Add speed control
 
-  // Animation effect - runs every 50ms when isRunning is true
   useEffect(() => {
     if (!isRunning) return;
 
     const interval = setInterval(() => {
       setPath(prev => {
-        // Get the current position (last point in path)
         const current = prev[prev.length - 1];
-        
-        // Pick a random direction: 0=up, 1=right, 2=down, 3=left
         const direction = Math.floor(Math.random() * 4);
         
-        // Start with current position
         let x = current.x;
         let y = current.y;
         
-        // Move based on random direction
-        if (direction === 0) y -= STEP; // Move up
-        if (direction === 1) x += STEP; // Move right
-        if (direction === 2) y += STEP; // Move down
-        if (direction === 3) x -= STEP; // Move left
+        if (direction === 0) y -= STEP;
+        if (direction === 1) x += STEP;
+        if (direction === 2) y += STEP;
+        if (direction === 3) x -= STEP;
         
-        // Bounce back if hitting walls
-        if (x < 0) x = -x; // Bounce off left wall
-        if (x > WIDTH) x = WIDTH - (x - WIDTH); // Bounce off right wall
-        if (y < 0) y = -y; // Bounce off top wall
-        if (y > HEIGHT) y = HEIGHT - (y - HEIGHT); // Bounce off bottom wall
+        // Bounce logic
+        if (x < 0) x = -x;
+        if (x > WIDTH) x = WIDTH - (x - WIDTH);
+        if (y < 0) y = -y;
+        if (y > HEIGHT) y = HEIGHT - (y - HEIGHT);
         
-        // Ensure position stays within bounds after bounce
         x = Math.max(0, Math.min(WIDTH, x));
         y = Math.max(0, Math.min(HEIGHT, y));
         
-        // Add new position to path
         return [...prev, { x, y }];
       });
-    }, 50); // Update every 50 milliseconds
+    }, speed); // Use dynamic speed
 
-    // Cleanup: stop interval when component unmounts or isRunning changes
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [isRunning, speed]);
 
-  // Drawing effect - runs whenever path changes
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -66,47 +52,82 @@ const RandomWalk = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear the entire canvas
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
     
-    // Draw the path as a green line
-    ctx.strokeStyle = '#00ff00';
+    // Draw background (optional, for card feeling)
+    // ctx.fillStyle = '#1e293b'; 
+    // ctx.fillRect(0,0,WIDTH,HEIGHT);
+
+    ctx.strokeStyle = '#10b981'; // Success green from theme
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(path[0].x, path[0].y); // Start at first point
-    path.forEach(p => ctx.lineTo(p.x, p.y)); // Connect all points
+    ctx.moveTo(path[0].x, path[0].y);
+    path.forEach(p => ctx.lineTo(p.x, p.y));
     ctx.stroke();
     
-    // Draw current position as a red dot
     const last = path[path.length - 1];
-    ctx.fillStyle = '#ff0000';
+    ctx.fillStyle = '#ef4444'; // Red from theme
     ctx.beginPath();
     ctx.arc(last.x, last.y, 4, 0, Math.PI * 2);
     ctx.fill();
   }, [path]);
 
-  // Reset to starting position and stop animation
   const reset = () => {
     setPath([{ x: WIDTH / 2, y: HEIGHT / 2 }]);
     setIsRunning(false);
   };
 
   return (
-    <div className="random-walk-container">
-      <h1>Random Walk</h1>
-      <div className="controls">
-        <button onClick={() => setIsRunning(!isRunning)}>
-          {isRunning ? 'Stop' : 'Start'}
-        </button>
-        <button className="reset-button" onClick={reset}>Reset</button>
+    <div className="container">
+      <h1 style={{ marginBottom: '0.5rem' }}>Random Walk</h1>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+        "Not all those who wander are lost."
+      </p>
+
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+        <div style={{ 
+          border: '1px solid #334155', 
+          borderRadius: '8px', 
+          overflow: 'hidden',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+        }}>
+          <canvas
+            ref={canvasRef}
+            width={WIDTH}
+            height={HEIGHT}
+            style={{ display: 'block', backgroundColor: '#0f172a' }}
+          />
+        </div>
+
+        <p className="stats" style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
+          Steps: {path.length - 1}
+        </p>
+
+        <div className="controls" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+             <button onClick={() => setIsRunning(!isRunning)} style={{ 
+               backgroundColor: isRunning ? '#ef4444' : 'var(--accent)', 
+               color: 'white',
+               minWidth: '100px'
+             }}>
+              {isRunning ? 'Stop' : 'Start Walk'}
+            </button>
+            <button onClick={reset}>Reset</button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Speed ({speed}ms)</span>
+            <input 
+              type="range" 
+              min="10" 
+              max="200" 
+              step="10"
+              value={speed}
+              onChange={(e) => setSpeed(Number(e.target.value))}
+            />
+          </div>
+        </div>
       </div>
-      <canvas
-        ref={canvasRef}
-        width={WIDTH}
-        height={HEIGHT}
-        className="canvas"
-      />
-      <p className="stats">Steps: {path.length - 1}</p>
     </div>
   );
 }

@@ -14,6 +14,14 @@ const Home = () => {
         <Link to="/random-walk" className="algorithm-button">
           Random Walk
         </Link>
+
+        <Link to="/bogosort" className="algorithm-button">
+          Bogosort
+        </Link>
+
+        <Link to="/slot-machine" className="algorithm-button">
+          🎰 Slot Machine Bogo 🎰
+        </Link>
       </div>
     </div>
   );

@@ -1,50 +1,91 @@
-import { useState } from "react";
-import "./BubbleSort.css";
+import { useState, useRef, useEffect } from "react";
+import { Visualizer } from "./Visualizer";
+import { Controls } from "./Controls";
+import "../index.css";
 
 const BubbleSort = () => {
-  const [arr, setArr] = useState<number[]>(() =>
-    Array.from({ length: 12 }, () => Math.floor(Math.random() * 101))
-  );
+  const [array, setArray] = useState<number[]>([]);
+  const [isSorting, setIsSorting] = useState(false);
+  const [isSorted, setIsSorted] = useState(false);
+  const [speed, setSpeed] = useState(50);
+  const stopRef = useRef(false);
+
+  useEffect(() => {
+    generateRandomArray();
+  }, []);
 
   const generateRandomArray = () => {
-    const randomArr = Array.from({ length: 12 }, () =>
-      Math.floor(Math.random() * 101)
-    );
-    setArr(randomArr);
+    if (isSorting) return;
+    // Generate unique values 1..15
+    const newArray = Array.from({ length: 15 }, (_, i) => i + 1);
+    
+    // Shuffle
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    
+    setArray(newArray);
+    setIsSorted(false);
+    setIsSorting(false);
   };
 
   const startSort = async () => {
-    const sortedArr = [...arr];
-    let temp = 0;
+    if (isSorting || isSorted) return;
+    setIsSorting(true);
+    stopRef.current = false;
+    
+    const sortedArr = [...array];
     const n = sortedArr.length;
+    let swapped;
+
     for (let i = 0; i < n - 1; i++) {
-      for (let j = 0; j < n - i - 1; j++) {
-        if (sortedArr[j] > sortedArr[j + 1]) {
-          temp = sortedArr[j];
-          sortedArr[j] = sortedArr[j + 1];
-          sortedArr[j + 1] = temp;
-          setArr([...sortedArr]); // Update to show each step
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Wait 500ms between steps
+        swapped = false;
+        for (let j = 0; j < n - i - 1; j++) {
+            if (stopRef.current) {
+                setIsSorting(false);
+                return;
+            }
+
+            if (sortedArr[j] > sortedArr[j + 1]) {
+                const temp = sortedArr[j];
+                sortedArr[j] = sortedArr[j + 1];
+                sortedArr[j + 1] = temp;
+                swapped = true;
+                setArray([...sortedArr]);
+                await new Promise((resolve) => setTimeout(resolve, speed));
+            }
         }
-      }
+        if (!swapped) break;
     }
+
+    setIsSorted(true);
+    setIsSorting(false);
+  };
+
+  const stopSort = () => {
+    stopRef.current = true;
   };
 
   return (
-    <div className="bubble-sort-container">
-      <h1>Bubble Sort</h1>
-      <div className="controls">
-        <button onClick={generateRandomArray}>Generate Random Array</button>
-        <button onClick={startSort}>Start Sorting</button>
-      </div>
-      <div className="arrayBar">
-        {arr.map((value, index) => (
-          <div
-            key={index}
-            data-value={value}
-            style={{ height: `${value * 5 + 6}px` }}
-          ></div>
-        ))}
+    <div className="container">
+      <h1 style={{ marginBottom: '0.5rem' }}>Bubble Sort</h1>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+        "Determined, but not efficient."
+      </p>
+
+      <div className="card">
+        <Visualizer array={array} isSorted={isSorted} />
+        <Controls 
+          onStart={startSort}
+          onStop={stopSort}
+          onReset={generateRandomArray}
+          isSorting={isSorting}
+          isSorted={isSorted}
+          speed={speed}
+          setSpeed={setSpeed}
+          startLabel="Start Bubble Sort"
+        />
       </div>
     </div>
   );
